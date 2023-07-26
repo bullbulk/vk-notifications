@@ -1,7 +1,7 @@
-discord~=2.3.1
-python-dotenv~=1.0.0
 SQLAlchemy~=2.0.19
-pydantic~=2.1.0
 alembic~=1.11.1
-pydantic_settings
+discord~=2.3.1
 psycopg2-binary
+pydantic~=1.10.0
+python-dotenv~=1.0.0
+vkbottle~=4.4.0.dev1

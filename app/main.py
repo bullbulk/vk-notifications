@@ -23,11 +23,7 @@ async def on_message(message):
 
     if message.content.startswith("??subscribe"):
         session = SessionLocal()
-        print(
-            session.query(Subscription)
-            .where(Subscription.channel_id == message.channel.id)
-            .exists()
-        )
+
         if session.query(
             exists().where(Subscription.channel_id == message.channel.id)
         ).scalar():
