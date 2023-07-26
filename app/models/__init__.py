@@ -1,1 +1,1 @@
-from app.models.bot import Subscription
+from .bot import Subscription, Post

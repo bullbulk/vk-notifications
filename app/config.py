@@ -28,7 +28,9 @@ class Settings(BaseSettings):
         )
 
     DISCORD_TOKEN: str
-    VK_TOKEN: str
+    DISCORD_OWNER_ID: int
+    VK_SERVICE_KEY: str
+    VK_GROUP_ID: int
 
     class Config:
         case_sensitive = True

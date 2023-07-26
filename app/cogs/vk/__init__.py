@@ -1,0 +1,1 @@
+from .cog import VkCog
