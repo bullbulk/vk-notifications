@@ -1,5 +1,6 @@
 import asyncio
 
+import discord.utils
 import vkbottle
 from discord.ext import commands
 from sqlalchemy import select
@@ -72,10 +73,23 @@ class VkCog(commands.Cog):
 
             subscribed_channels = await self.get_subscribed_channels()
             for channel in subscribed_channels:
-                await channel.send(post.text)
+                await self.send_post(channel, post)
+
             db_obj.status = Post.PostStatus.PROCESSED
             session.add(db_obj)
             session.commit()
+
+    async def send_post(self, channel, post):
+        message_text = post.text
+
+        if settings.DISCORD_MENTION_ROLE:
+            role = await discord.utils.get(
+                channel.guild.roles, name=settings.DISCORD_MENTION_ROLE
+            )
+            if role:
+                message_text = f"{role.mention} {message_text}"
+
+        await channel.send(message_text)
 
     async def get_subscribed_channels(self):
         with SessionLocal() as session:

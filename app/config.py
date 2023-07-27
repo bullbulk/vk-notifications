@@ -29,6 +29,8 @@ class Settings(BaseSettings):
 
     DISCORD_TOKEN: str
     DISCORD_OWNER_ID: int
+    DISCORD_MENTION_ROLE: str | None = "Колокольчик"
+
     VK_SERVICE_KEY: str
     VK_GROUP_ID: int
 
