@@ -83,10 +83,9 @@ class VkCog(commands.Cog):
         message_text = post.text
 
         if settings.DISCORD_MENTION_ROLE:
-            role = await discord.utils.get(
+            if role := discord.utils.get(
                 channel.guild.roles, name=settings.DISCORD_MENTION_ROLE
-            )
-            if role:
+            ):
                 message_text = f"{role.mention} {message_text}"
 
         await channel.send(message_text)
