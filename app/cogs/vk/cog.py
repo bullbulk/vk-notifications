@@ -1,15 +1,25 @@
 import asyncio
+import io
+from pathlib import Path
+from urllib.parse import urlparse
 
+import aiohttp
 import discord.utils
 import vkbottle
 from discord.ext import commands
 from sqlalchemy import select
-from vkbottle_types.codegen.objects import WallWallpostFull
+from vkbottle_types.codegen.objects import WallWallpostFull, WallWallpostAttachmentType
 from vkbottle_types.responses import wall
 
 from app import settings
 from app.db.session import SessionLocal
 from app.models.bot import Post, Subscription
+
+
+def get_extension_from_url(url: str):
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    return Path(path).suffix
 
 
 class VkCog(commands.Cog):
@@ -56,6 +66,8 @@ class VkCog(commands.Cog):
         session.commit()
         session.close()
 
+        posts_to_process.reverse()
+
         for post in posts_to_process:
             await self.process_post(post)
 
@@ -88,7 +100,9 @@ class VkCog(commands.Cog):
             ):
                 message_text = f"{role.mention} {message_text}"
 
-        await channel.send(message_text)
+        attachments = await self.build_attachments(post)
+
+        await channel.send(message_text, files=attachments)
 
     async def get_subscribed_channels(self):
         with SessionLocal() as session:
@@ -98,3 +112,25 @@ class VkCog(commands.Cog):
                 if channel := self.bot.get_channel(sub.channel_id):
                     channels.append(channel)
         return channels
+
+    async def build_attachments(self, post: WallWallpostFull):
+        files = []
+
+        async with aiohttp.ClientSession() as session:
+            for index, attachment in enumerate(post.attachments):
+                if attachment.type.value == WallWallpostAttachmentType.PHOTO.value:
+                    if url := attachment.photo.sizes[-1].url:
+                        async with session.get(url) as resp:
+                            img = await resp.read()
+                            ext = get_extension_from_url(url)
+                            filename = f"image_{index}{ext}"
+
+                            with io.BytesIO(img) as fp:
+                                files.append(
+                                    discord.File(
+                                        fp,
+                                        filename=filename,
+                                    )
+                                )
+
+        return files
