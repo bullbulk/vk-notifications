@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+from loguru import logger
 from sqlalchemy import exists
 
 from app import Subscription
@@ -20,16 +21,18 @@ class SubscriptionCog(commands.Cog):
             if session.query(
                 exists().where(Subscription.channel_id == interaction.channel.id)
             ).scalar():
-                session.close()
                 return await interaction.response.send_message(
                     ":x: Канал уже подписан на обновления.", ephemeral=True
                 )
 
-            session.add(Subscription(channel_id=message.channel.id))  # noqa
+            logger.info(f"Writing subscribe: {interaction.channel.id}")
+
+            # noinspection PyArgumentList
+            session.add(Subscription(channel_id=interaction.channel.id))
             session.commit()
 
         return await interaction.response.send_message(
-            ":white_check_mark: Канал подписан на обновления."
+            ":white_check_mark: Канал подписан на обновления.", ephemeral=True
         )
 
     @subscribe.error
