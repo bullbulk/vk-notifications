@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import io
 from pathlib import Path
 from urllib.parse import urlparse
@@ -35,12 +36,10 @@ class VkCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         while not self.bot.is_closed():
-            try:
+            with contextlib.suppress(Exception):
                 posts = await self.get_posts()
                 await self.process_wall_response(posts)
-            except Exception:  # noqa
-                continue
-            await asyncio.sleep(20)  # task runs every 60 seconds
+            await asyncio.sleep(20)  # task runs every 20 seconds
 
     async def get_posts(self):
         return await self.vk_bot.api.wall.get(owner_id=settings.VK_GROUP_ID)
