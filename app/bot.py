@@ -19,6 +19,7 @@ class CustomBot(commands.Bot):
     async def on_ready(self):
         logger.info(f"We have logged in as {self.user}")
         self.owner = await self.fetch_user(settings.DISCORD_OWNER_ID)
+        await self.tree.sync()
 
     async def register_cogs(self):
         await self.add_cog(cogs.VkCog(self))
