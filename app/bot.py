@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 
+import discord
 from discord import Message
 from discord.ext import commands
 from loguru import logger
@@ -32,6 +33,12 @@ class CustomBot(commands.Bot):
         await self.process_commands(message)
 
     async def on_command_error(self, ctx, exception):
+        if exception.__class__ in (
+            discord.ext.commands.errors.CommandNotFound,
+            discord.app_commands.CommandNotFound,
+        ):
+            return
+
         tb = "".join(
             traceback.format_exception(
                 type(exception), exception, exception.__traceback__
