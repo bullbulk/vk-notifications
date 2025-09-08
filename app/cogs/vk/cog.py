@@ -13,7 +13,7 @@ from vkbottle_types.codegen.objects import WallWallpostFull, WallWallpostAttachm
 from vkbottle_types.responses import wall
 
 from app import settings
-from app.db.session import SessionLocal
+from app.db.session import get_session
 from app.models.bot import Post, Subscription
 
 
@@ -45,28 +45,23 @@ class VkCog(commands.Cog):
         return await self.vk_bot.api.wall.get(owner_id=settings.VK_GROUP_ID)
 
     async def process_wall_response(
-        self, posts: wall.GetResponseModel | wall.GetExtendedResponseModel
+        self, posts: wall.WallGetResponseModel | wall.WallGetExtendedResponseModel
     ):
         if not posts.count:
             return
 
         hashes = list(map(lambda x: x.hash, posts.items))
 
-        session = SessionLocal()
+        async with get_session() as session:
+            result = await session.execute(select(Post).where(Post.hash.in_(hashes)))
+            db_posts = result.scalars().all()
 
-        db_posts = {
-            v.hash: v
-            for v in session.scalars(select(Post).where(Post.hash.in_(hashes))).all()
-        }
-
-        posts_to_process = []
-        for post in posts.items:
-            if post.hash not in db_posts:
-                session.add(Post(hash=post.hash))  # noqa
-            posts_to_process.append(post)
-
-        session.commit()
-        session.close()
+            posts_to_process = []
+            for post in posts.items:
+                db_post = [p for p in db_posts if p.hash == post.hash]
+                if not db_post:
+                    session.add(Post(hash=post.hash))  # noqa
+                posts_to_process.append(post)
 
         posts_to_process.reverse()
 
@@ -74,24 +69,27 @@ class VkCog(commands.Cog):
             await self.process_post(post)
 
     async def process_post(self, post: WallWallpostFull):
-        with SessionLocal() as session:
-            if db_obj := session.query(Post).where(Post.hash == post.hash).first():
-                if db_obj.status != Post.PostStatus.OBTAINED:
-                    return
-            else:
-                db_obj = Post(hash=post.hash)  # noqa
+        async with get_session() as session:
+            result = await session.execute(select(Post).where(Post.hash == post.hash))
+            db_obj = result.scalars().first()
+
+            if db_obj is None:
+                db_obj = Post(hash=post.hash)
+            elif db_obj.status != Post.PostStatus.OBTAINED:
+                return
 
             db_obj.status = Post.PostStatus.IN_PROCESS
             session.add(db_obj)
-            session.commit()
+            await session.commit()
 
             subscribed_channels = await self.get_subscribed_channels()
+
             for channel in subscribed_channels:
                 await self.send_post(channel, post)
 
             db_obj.status = Post.PostStatus.PROCESSED
             session.add(db_obj)
-            session.commit()
+            await session.commit()
 
     async def send_post(self, channel, post):
         message_text = post.text
@@ -103,12 +101,12 @@ class VkCog(commands.Cog):
                 message_text = f"{role.mention} {message_text}"
 
         attachments = await self.build_attachments(post)
-
         await channel.send(message_text, files=attachments)
 
     async def get_subscribed_channels(self):
-        with SessionLocal() as session:
-            subscriptions = session.scalars(select(Subscription)).all()
+        async with get_session() as session:
+            result = await session.execute(select(Subscription))
+            subscriptions = result.scalars().all()
             channels = []
             for sub in subscriptions:
                 if channel := self.bot.get_channel(sub.channel_id):

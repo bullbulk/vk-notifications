@@ -1,7 +1,15 @@
 import asyncio
+import platform
 import traceback
 
 import discord
+
+if platform.system() == "Windows":
+    if isinstance(
+        asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy
+    ):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from discord import Message
 from discord.ext import commands
 from loguru import logger

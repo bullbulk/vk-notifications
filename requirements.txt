@@ -1,9 +1,10 @@
-SQLAlchemy~=2.0.19
-aiohttp~=3.8.5
+SQLAlchemy~=2.0.43
+aiohttp~=3.12.15
 alembic~=1.11.1
-discord~=2.3.1
+discord~=2.3.2
 loguru~=0.7.0
-psycopg2-binary
-pydantic~=1.10.0
+psycopg~=3.2.10
+pydantic~=2.11.7
+pydantic-settings~=2.10.1
 python-dotenv~=1.0.0
-vkbottle~=4.4.0.dev1
+vkbottle~=4.6.0

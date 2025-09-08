@@ -1,4 +1,12 @@
+import asyncio
+import sys
+
 import discord
+
+if sys.platform == "win32" and isinstance(
+    asyncio.get_event_loop_policy(), asyncio.WindowsProactorEventLoopPolicy
+):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from app import logger
 from app.bot import CustomBot
