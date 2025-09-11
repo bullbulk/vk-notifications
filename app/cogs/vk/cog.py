@@ -36,9 +36,8 @@ class VkCog(commands.Cog):
         await self.bot.wait_until_ready()
 
         while not self.bot.is_closed():
-            with contextlib.suppress(Exception):
-                posts = await self.get_posts()
-                await self.process_wall_response(posts)
+            posts = await self.get_posts()
+            await self.process_wall_response(posts)
             await asyncio.sleep(20)  # task runs every 20 seconds
 
     async def get_posts(self):
